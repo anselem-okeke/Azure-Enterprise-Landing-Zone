@@ -21,3 +21,11 @@ output "hub_subnet_ids" {
 output "dev_spoke_subnet_ids" {
   value = module.network_spoke_dev.subnet_ids
 }
+
+output "jumpbox_vm_name" {
+  value = module.jumpbox_vm.vm_name
+}
+
+output "jumpbox_public_ip" {
+  value = module.jumpbox_vm.public_ip_address
+}

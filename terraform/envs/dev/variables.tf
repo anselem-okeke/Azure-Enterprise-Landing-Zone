@@ -44,3 +44,14 @@ variable "trusted_admin_ip" {
   description = "Trusted public IP allowed to SSH to the jumpbox subnet"
   type        = string
 }
+
+variable "admin_username" {
+  description = "Admin username for the Linux jumpbox VM"
+  type        = string
+  default     = "azureuser"
+}
+
+variable "ssh_public_key" {
+  description = "SSH public key content for the Linux jumpbox VM"
+  type        = string
+}

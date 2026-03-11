@@ -132,3 +132,17 @@ module "nsg_dev_app" {
     }
   ]
 }
+
+module "jumpbox_vm" {
+  source              = "../../modules/linux-vm"
+  name                = "vm-jumpbox-dev-we-01"
+  location            = var.location
+  resource_group_name = module.rg_hub.name
+  subnet_id           = module.network_hub.subnet_ids["jumpbox"]
+  admin_username      = var.admin_username
+  ssh_public_key      = var.ssh_public_key
+  vm_size             = "Standard_B2ts_v2"
+  public_ip_name      = "pip-jumpbox-dev-we-01"
+  nic_name            = "nic-jumpbox-dev-we-01"
+  tags                = local.tags
+}
