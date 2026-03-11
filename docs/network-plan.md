@@ -2,7 +2,39 @@
 
 ```mermaid
 flowchart LR
-    subgraph HUB["Hub VNet<br/>10.0.0.0/16"]
+    subgraph DEV["Dev Spoke"]
+        direction TB
+        DEVLBL["10.1.0.0/16"]
+        subgraph DROW[" "]
+            direction LR
+            DA["Dev App<br/>10.1.2.0/24"]
+            DPE["Dev Private Endpoints<br/>10.1.3.0/24"]
+        end
+    end
+
+    subgraph PROD["Prod Spoke"]
+        direction TB
+        PRODLBL["10.2.0.0/16"]
+        subgraph PROW[" "]
+            direction LR
+            PA["Prod App<br/>10.2.2.0/24"]
+            PPE["Prod Private Endpoints<br/>10.2.3.0/24"]
+        end
+    end
+
+    subgraph PRIVATE["Private Services Spoke"]
+        direction TB
+        PRIVLBL["10.3.0.0/16"]
+        subgraph PVTROW[" "]
+            direction LR
+            PC["Private Core<br/>10.3.1.0/24"]
+            PE["Private Endpoints<br/>10.3.2.0/24"]
+        end
+    end
+
+    subgraph HUB["Hub VNet"]
+        direction TB
+        HUBLBL["10.0.0.0/16"]
         J["Jumpbox<br/>10.0.1.0/24"]
         SS["Shared Services<br/>10.0.2.0/24"]
         M["Management<br/>10.0.3.0/24"]
@@ -11,30 +43,9 @@ flowchart LR
         G["Gateway<br/>10.0.30.0/24<br/>Reserved"]
     end
 
-    subgraph DEV["Dev Spoke<br/>10.1.0.0/16"]
-        DA["Dev App<br/>10.1.2.0/24"]
-        DPE["Dev Private Endpoints<br/>10.1.3.0/24"]
-    end
-
-    subgraph PROD["Prod Spoke<br/>10.2.0.0/16"]
-        PA["Prod App<br/>10.2.2.0/24"]
-        PPE["Prod Private Endpoints<br/>10.2.3.0/24"]
-    end
-
-    subgraph PRIVATE["Private Services Spoke<br/>10.3.0.0/16"]
-        PC["Private Core<br/>10.3.1.0/24"]
-        PPE2["Private Endpoints<br/>10.3.2.0/24"]
-    end
-
-    subgraph CICD["CI/CD Spoke<br/>10.4.0.0/16"]
-        R["Runners<br/>10.4.1.0/24"]
-        BA["Build Agents<br/>10.4.2.0/24"]
-    end
-
     DEV <--> HUB
     PROD <--> HUB
     PRIVATE <--> HUB
-    CICD <--> HUB
 
     G -.-> HC["Hybrid Connectivity<br/>VPN / ExpressRoute"]
     B -.-> AB["Azure Bastion Future"]
