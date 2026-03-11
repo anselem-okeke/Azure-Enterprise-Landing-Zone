@@ -41,6 +41,10 @@ module "network_hub" {
     }
   }
 
+  subnet_nsg_associations = {
+    jumpbox = module.nsg_jumpbox.id
+  }
+
   tags = local.tags
 }
 
@@ -62,6 +66,10 @@ module "network_spoke_dev" {
     }
   }
 
+  subnet_nsg_associations = {
+    dev_app = module.nsg_dev_app.id
+  }
+
   tags = local.tags
 }
 
@@ -79,4 +87,48 @@ module "peer_dev_to_hub" {
   resource_group_name       = module.rg_spoke_dev.name
   virtual_network_name      = module.network_spoke_dev.vnet_name
   remote_virtual_network_id = module.network_hub.vnet_id
+}
+
+module "nsg_jumpbox" {
+  source              = "../../modules/nsg"
+  name                = "nsg-jumpbox-dev-we-01"
+  location            = var.location
+  resource_group_name = module.rg_hub.name
+  tags                = local.tags
+
+  security_rules = [
+    {
+      name                       = "allow-ssh-from-trusted-ip"
+      priority                   = 100
+      direction                  = "Inbound"
+      access                     = "Allow"
+      protocol                   = "Tcp"
+      source_port_range          = "*"
+      destination_port_range     = "22"
+      source_address_prefix      = var.trusted_admin_ip
+      destination_address_prefix = "*"
+    }
+  ]
+}
+
+module "nsg_dev_app" {
+  source              = "../../modules/nsg"
+  name                = "nsg-dev-app-dev-we-01"
+  location            = var.location
+  resource_group_name = module.rg_spoke_dev.name
+  tags                = local.tags
+
+  security_rules = [
+    {
+      name                       = "deny-internet-admin-access"
+      priority                   = 100
+      direction                  = "Inbound"
+      access                     = "Deny"
+      protocol                   = "Tcp"
+      source_port_range          = "*"
+      destination_port_range     = "22"
+      source_address_prefix      = "Internet"
+      destination_address_prefix = "*"
+    }
+  ]
 }

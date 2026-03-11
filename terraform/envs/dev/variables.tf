@@ -39,3 +39,8 @@ variable "phase" {
   type        = string
   default     = "poc"
 }
+
+variable "trusted_admin_ip" {
+  description = "Trusted public IP allowed to SSH to the jumpbox subnet"
+  type        = string
+}
