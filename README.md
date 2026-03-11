@@ -1,1 +1,1 @@
-# -azure-landing-zone
+# Azure-landing-zone
