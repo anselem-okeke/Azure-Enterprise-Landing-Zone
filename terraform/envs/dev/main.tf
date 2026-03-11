@@ -66,17 +66,17 @@ module "network_spoke_dev" {
 }
 
 module "peer_hub_to_dev" {
-  source                  = "../../modules/vnet-peering"
-  name                    = "peer-hub-to-dev-we-01"
-  resource_group_name     = module.rg_hub.name
-  virtual_network_name    = module.network_hub.vnet_name
+  source                    = "../../modules/vnet-peering"
+  name                      = "peer-hub-to-dev-we-01"
+  resource_group_name       = module.rg_hub.name
+  virtual_network_name      = module.network_hub.vnet_name
   remote_virtual_network_id = module.network_spoke_dev.vnet_id
 }
 
 module "peer_dev_to_hub" {
-  source                  = "../../modules/vnet-peering"
-  name                    = "peer-dev-to-hub-we-01"
-  resource_group_name     = module.rg_spoke_dev.name
-  virtual_network_name    = module.network_spoke_dev.vnet_name
+  source                    = "../../modules/vnet-peering"
+  name                      = "peer-dev-to-hub-we-01"
+  resource_group_name       = module.rg_spoke_dev.name
+  virtual_network_name      = module.network_spoke_dev.vnet_name
   remote_virtual_network_id = module.network_hub.vnet_id
 }
