@@ -1,0 +1,7 @@
+location    = "westeurope"
+project     = "azure-landing-zone"
+environment = "dev"
+owner       = "anselem"
+managed_by  = "terraform"
+cost_center = "lab"
+phase       = "poc"
