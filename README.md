@@ -31,6 +31,81 @@ The architecture is designed to achieve the following goals:
 - enable phased implementation with Terraform
 - keep the initial deployment cost low during the proof-of-concept stage
 
+## Network Plan
+
+```mermaid
+flowchart LR
+    subgraph DEV["Dev Spoke"]
+        direction TB
+        DEVLBL["10.1.0.0/16"]
+        subgraph DROW[" "]
+            direction LR
+            DA["Dev App<br/>10.1.2.0/24"]
+            DPE["Dev Private Endpoints<br/>10.1.3.0/24"]
+        end
+    end
+
+    subgraph PROD["Prod Spoke"]
+        direction TB
+        PRODLBL["10.2.0.0/16"]
+        subgraph PROW[" "]
+            direction LR
+            PA["Prod App<br/>10.2.2.0/24"]
+            PPE["Prod Private Endpoints<br/>10.2.3.0/24"]
+        end
+    end
+
+    subgraph PRIVATE["Private Services Spoke"]
+        direction TB
+        PRIVLBL["10.3.0.0/16"]
+        subgraph PVTROW[" "]
+            direction LR
+            PC["Private Core<br/>10.3.1.0/24"]
+            PE["Private Endpoints<br/>10.3.2.0/24"]
+        end
+    end
+
+    subgraph HUB["Hub VNet"]
+        direction TB
+        HUBLBL["10.0.0.0/16"]
+        J["Jumpbox<br/>10.0.1.0/24"]
+        SS["Shared Services<br/>10.0.2.0/24"]
+        M["Management<br/>10.0.3.0/24"]
+        B["Azure Bastion<br/>10.0.10.0/24<br/>Reserved"]
+        F["Firewall<br/>10.0.20.0/24<br/>Reserved"]
+        G["Gateway<br/>10.0.30.0/24<br/>Reserved"]
+    end
+
+    DEV <--> HUB
+    PROD <--> HUB
+    PRIVATE <--> HUB
+
+    G -.-> HC["Hybrid Connectivity<br/>VPN / ExpressRoute"]
+    B -.-> AB["Azure Bastion Future"]
+    F -.-> AF["Azure Firewall Future"]
+```
+
+## Summary Table
+
+| Zone | VNet CIDR | Subnet | CIDR | Purpose |
+|---|---|---|---|---|
+| Hub | `10.0.0.0/16` | `snet-jumpbox` | `10.0.1.0/24` | Admin access VM |
+| Hub | `10.0.0.0/16` | `snet-shared-services` | `10.0.2.0/24` | Shared platform services |
+| Hub | `10.0.0.0/16` | `snet-management` | `10.0.3.0/24` | Future management services |
+| Hub | `10.0.0.0/16` | `snet-azurebastion` | `10.0.10.0/24` | Reserved |
+| Hub | `10.0.0.0/16` | `snet-firewall` | `10.0.20.0/24` | Reserved |
+| Hub | `10.0.0.0/16` | `snet-gateway` | `10.0.30.0/24` | Reserved |
+| Dev | `10.1.0.0/16` | `snet-dev-system` | `10.1.1.0/24` | Future platform components |
+| Dev | `10.1.0.0/16` | `snet-dev-app` | `10.1.2.0/24` | App workloads |
+| Dev | `10.1.0.0/16` | `snet-dev-private-endpoints` | `10.1.3.0/24` | Private endpoint usage |
+| Prod | `10.2.0.0/16` | `snet-prod-system` | `10.2.1.0/24` | Future platform components |
+| Prod | `10.2.0.0/16` | `snet-prod-app` | `10.2.2.0/24` | App workloads |
+| Prod | `10.2.0.0/16` | `snet-prod-private-endpoints` | `10.2.3.0/24` | Private endpoint usage |
+| Private Services | `10.3.0.0/16` | `snet-private-core` | `10.3.1.0/24` | Core internal services |
+| Private Services | `10.3.0.0/16` | `snet-private-endpoints` | `10.3.2.0/24` | Private endpoint usage |
+| CI/CD | `10.4.0.0/16` | `snet-runners` | `10.4.1.0/24` | Private runners |
+| CI/CD | `10.4.0.0/16` | `snet-build-agents` | `10.4.2.0/24` | Build/deploy agents |
+
 ## Why Hub-and-Spoke
 
 A hub-and-spoke model is used to centralize shared services while keeping workloads isolated in dedicated spoke networks.
