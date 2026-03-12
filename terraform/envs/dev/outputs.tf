@@ -41,3 +41,15 @@ output "private_endpoint_name" {
 output "key_vault_private_dns_zone" {
   value = module.private_dns_kv.zone_name
 }
+
+output "aks_dev_name" {
+  value = module.aks_dev.name
+}
+
+output "aks_dev_fqdn" {
+  value = module.aks_dev.fqdn
+}
+
+output "aks_dev_node_resource_group" {
+  value = module.aks_dev.node_resource_group
+}

@@ -55,3 +55,15 @@ variable "ssh_public_key" {
   description = "SSH public key content for the Linux jumpbox VM"
   type        = string
 }
+
+variable "aks_vm_size" {
+  description = "VM size for AKS system node pool"
+  type        = string
+  default     = "Standard_B2ts_v2"
+}
+
+variable "aks_node_count" {
+  description = "Node count for AKS system node pool"
+  type        = number
+  default     = 1
+}

@@ -11,6 +11,19 @@ locals {
 
 data "azurerm_client_config" "current" {}
 
+resource "azurerm_user_assigned_identity" "aks_dev" {
+  name                = "id-aks-dev-we-01"
+  location            = var.location
+  resource_group_name = module.rg_spoke_dev.name
+  tags                = local.tags
+}
+
+resource "azurerm_role_assignment" "aks_dev_subnet_network_contributor" {
+  scope                = module.network_spoke_dev.subnet_ids["dev_aks_system"]
+  role_definition_name = "Network Contributor"
+  principal_id         = azurerm_user_assigned_identity.aks_dev.principal_id
+}
+
 module "rg_hub" {
   source   = "../../modules/resource-group"
   name     = "rg-hub-network-dev"
@@ -72,6 +85,10 @@ module "network_spoke_dev" {
     dev_private_endpoints = {
       name           = "snet-dev-private-endpoints"
       address_prefix = "10.1.3.0/24"
+    }
+    dev_aks_system = {
+      name           = "snet-dev-aks-system"
+      address_prefix = "10.1.10.0/24"
     }
   }
 
@@ -185,4 +202,21 @@ module "private_service_example" {
   tenant_id                            = data.azurerm_client_config.current.tenant_id
   private_dns_zone_ids                 = [module.private_dns_kv.zone_id]
   tags                                 = local.tags
+}
+
+module "aks_dev" {
+  source              = "../../modules/aks"
+  name                = "aks-dev-we-01"
+  location            = var.location
+  resource_group_name = module.rg_spoke_dev.name
+  dns_prefix          = "aksdevwe01"
+  node_subnet_id      = module.network_spoke_dev.subnet_ids["dev_aks_system"]
+  identity_id         = azurerm_user_assigned_identity.aks_dev.id
+  node_count          = var.aks_node_count
+  vm_size             = var.aks_vm_size
+  tags                = local.tags
+
+  depends_on = [
+    azurerm_role_assignment.aks_dev_subnet_network_contributor
+  ]
 }
