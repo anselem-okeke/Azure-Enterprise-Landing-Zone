@@ -156,6 +156,24 @@ module "jumpbox_vm" {
   tags                = local.tags
 }
 
+module "private_dns_kv" {
+  source              = "../../modules/private-dns"
+  zone_name           = "privatelink.vaultcore.azure.net"
+  resource_group_name = module.rg_shared_services.name
+  tags                = local.tags
+
+  virtual_network_links = {
+    hub = {
+      name               = "pdnslink-hub-dev-we-01"
+      virtual_network_id = module.network_hub.vnet_id
+    }
+    dev = {
+      name               = "pdnslink-spoke-dev-we-01"
+      virtual_network_id = module.network_spoke_dev.vnet_id
+    }
+  }
+}
+
 module "private_service_example" {
   source                               = "../../modules/private-service-example"
   key_vault_name                       = "kvanselemdevwe01"
@@ -165,5 +183,6 @@ module "private_service_example" {
   private_endpoint_resource_group_name = module.rg_spoke_dev.name
   subnet_id                            = module.network_spoke_dev.subnet_ids["dev_private_endpoints"]
   tenant_id                            = data.azurerm_client_config.current.tenant_id
+  private_dns_zone_ids                 = [module.private_dns_kv.zone_id]
   tags                                 = local.tags
 }

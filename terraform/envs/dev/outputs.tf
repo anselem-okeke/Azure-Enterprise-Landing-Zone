@@ -37,3 +37,7 @@ output "key_vault_name" {
 output "private_endpoint_name" {
   value = module.private_service_example.private_endpoint_name
 }
+
+output "key_vault_private_dns_zone" {
+  value = module.private_dns_kv.zone_name
+}
