@@ -9,6 +9,8 @@ locals {
   }
 }
 
+data "azurerm_client_config" "current" {}
+
 module "rg_hub" {
   source   = "../../modules/resource-group"
   name     = "rg-hub-network-dev"
@@ -19,6 +21,13 @@ module "rg_hub" {
 module "rg_spoke_dev" {
   source   = "../../modules/resource-group"
   name     = "rg-spoke-dev-network"
+  location = var.location
+  tags     = local.tags
+}
+
+module "rg_shared_services" {
+  source   = "../../modules/resource-group"
+  name     = "rg-shared-services-dev"
   location = var.location
   tags     = local.tags
 }
@@ -145,4 +154,16 @@ module "jumpbox_vm" {
   public_ip_name      = "pip-jumpbox-dev-we-01"
   nic_name            = "nic-jumpbox-dev-we-01"
   tags                = local.tags
+}
+
+module "private_service_example" {
+  source                               = "../../modules/private-service-example"
+  key_vault_name                       = "kvanselemdevwe01"
+  private_endpoint_name                = "pep-kv-shared-dev-we-01"
+  location                             = var.location
+  key_vault_resource_group_name        = module.rg_shared_services.name
+  private_endpoint_resource_group_name = module.rg_spoke_dev.name
+  subnet_id                            = module.network_spoke_dev.subnet_ids["dev_private_endpoints"]
+  tenant_id                            = data.azurerm_client_config.current.tenant_id
+  tags                                 = local.tags
 }

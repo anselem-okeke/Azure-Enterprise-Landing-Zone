@@ -29,3 +29,11 @@ output "jumpbox_vm_name" {
 output "jumpbox_public_ip" {
   value = module.jumpbox_vm.public_ip_address
 }
+
+output "key_vault_name" {
+  value = module.private_service_example.key_vault_name
+}
+
+output "private_endpoint_name" {
+  value = module.private_service_example.private_endpoint_name
+}
