@@ -8,3 +8,5 @@ phase       = "poc"
 trusted_admin_ip = "87.122.27.164/32"
 admin_username = "azureuser"
 ssh_public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGIgdcFJUnUq7jYxfWEh9dd2sf+k3U+N6zq+9dkBgYr3 jumpbox@jumpbox"
+aks_vm_size      = "Standard_B2ls_v2"
+aks_node_count   = 1
