@@ -67,3 +67,30 @@ Represents future private runners and deployment tooling.
 
 ### On-Prem / HPC
 Represents future hybrid connectivity boundary only.
+
+## AKS Integration in the Dev Spoke
+
+The Phase 2 initial expansion introduces one AKS cluster into the development spoke.
+
+### Current implementation
+The development spoke now includes:
+- a dedicated AKS node subnet
+- one AKS cluster for non-production workloads
+- managed identity-based subnet access for the cluster
+
+### Design intent
+The AKS cluster extends the spoke from a network-only boundary into a workload platform boundary.
+
+The subnet model in the development spoke is now interpreted as:
+- `snet-dev-aks-system`: AKS node placement
+- `snet-dev-app`: future application-facing services or supporting components
+- `snet-dev-private-endpoints`: private endpoint consumption for internal Azure services
+
+### Security and network implications
+- AKS uses the dedicated subnet rather than sharing placement with private endpoints
+- the cluster identity is granted subnet permissions required for AKS networking
+- the AKS subnet is kept separate from the private endpoint subnet to reduce role confusion and blast radius
+
+### Current limitation
+The AKS API server is not yet implemented as a private-only endpoint.
+This keeps the implementation realistic for the current proof-of-concept phase while preserving a future path toward stronger private access models.

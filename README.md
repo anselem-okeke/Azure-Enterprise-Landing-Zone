@@ -318,46 +318,71 @@ The design uses a hub-and-spoke model to separate shared platform services from 
 - future shared service expansion
 
 ## Deployed Phase 1 Architecture
+![im](img/azure-private3.png)
 
-```mermaid
-flowchart LR
-    Internet((Internet))
+[comment]: <> (```mermaid)
 
-    subgraph HUB["Hub VNet: vnet-hub-dev-we-01 (10.0.0.0/16)"]
-        JSubnet["snet-jumpbox"]
-        SSubnet["snet-shared-services"]
-        Jumpbox["vm-jumpbox-dev-we-01"]
-        JNSG["NSG: nsg-jumpbox-dev-we-01\nSSH only from trusted IP"]
-        JSubnet --> Jumpbox
-        JNSG --- JSubnet
-    end
+[comment]: <> (flowchart LR)
 
-    subgraph DEV["Dev Spoke VNet: vnet-spoke-dev-we-01 (10.1.0.0/16)"]
-        AppSubnet["snet-dev-app"]
-        PESubnet["snet-dev-private-endpoints"]
-        AppNSG["NSG: nsg-dev-app-dev-we-01\nDeny direct internet SSH"]
-        PE["Private Endpoint:\npep-kv-shared-dev-we-01"]
-        AppNSG --- AppSubnet
-        PESubnet --> PE
-    end
+[comment]: <> (    Internet&#40;&#40;Internet&#41;&#41;)
 
-    subgraph SHARED["Shared Services RG"]
-        KV["Key Vault"]
-        PDNS["Private DNS Zone:\nprivatelink.vaultcore.azure.net"]
-    end
+[comment]: <> (    subgraph HUB["Hub VNet: vnet-hub-dev-we-01 &#40;10.0.0.0/16&#41;"])
 
-    Internet -->|SSH from trusted IP only| Jumpbox
+[comment]: <> (        JSubnet["snet-jumpbox"])
 
-    HUB <-->|VNet Peering| DEV
+[comment]: <> (        SSubnet["snet-shared-services"])
 
-    PE --> KV
-    PDNS --- PE
-    PDNS -. VNet Link .- HUB
-    PDNS -. VNet Link .- DEV
+[comment]: <> (        Jumpbox["vm-jumpbox-dev-we-01"])
 
-    Jumpbox -. private DNS resolution path .-> PDNS
-    Jumpbox -. private access path .-> KV
-```
+[comment]: <> (        JNSG["NSG: nsg-jumpbox-dev-we-01\nSSH only from trusted IP"])
+
+[comment]: <> (        JSubnet --> Jumpbox)
+
+[comment]: <> (        JNSG --- JSubnet)
+
+[comment]: <> (    end)
+
+[comment]: <> (    subgraph DEV["Dev Spoke VNet: vnet-spoke-dev-we-01 &#40;10.1.0.0/16&#41;"])
+
+[comment]: <> (        AppSubnet["snet-dev-app"])
+
+[comment]: <> (        PESubnet["snet-dev-private-endpoints"])
+
+[comment]: <> (        AppNSG["NSG: nsg-dev-app-dev-we-01\nDeny direct internet SSH"])
+
+[comment]: <> (        PE["Private Endpoint:\npep-kv-shared-dev-we-01"])
+
+[comment]: <> (        AppNSG --- AppSubnet)
+
+[comment]: <> (        PESubnet --> PE)
+
+[comment]: <> (    end)
+
+[comment]: <> (    subgraph SHARED["Shared Services RG"])
+
+[comment]: <> (        KV["Key Vault"])
+
+[comment]: <> (        PDNS["Private DNS Zone:\nprivatelink.vaultcore.azure.net"])
+
+[comment]: <> (    end)
+
+[comment]: <> (    Internet -->|SSH from trusted IP only| Jumpbox)
+
+[comment]: <> (    HUB <-->|VNet Peering| DEV)
+
+[comment]: <> (    PE --> KV)
+
+[comment]: <> (    PDNS --- PE)
+
+[comment]: <> (    PDNS -. VNet Link .- HUB)
+
+[comment]: <> (    PDNS -. VNet Link .- DEV)
+
+[comment]: <> (    Jumpbox -. private DNS resolution path .-> PDNS)
+
+[comment]: <> (    Jumpbox -. private access path .-> KV)
+
+[comment]: <> (```)
 
 
 ---
@@ -412,6 +437,21 @@ The following checks were completed during the Phase 1 implementation:
 - Key Vault private access path validated
 - Key Vault public network access disabled after validation
 
+### AKS Validation
+
+The AKS integration was validated using:
+- successful AKS deployment in the dev spoke
+- retrieval of AKS credentials with Azure CLI
+- `kubectl get nodes`
+- `kubectl get pods -A`
+- This confirms that the landing zone now includes a functioning Kubernetes platform component in the development spoke.
+
+### AKS Deployment Outputs
+
+- cluster name: `aks-dev-we-01`
+- node resource group: `aksdevwe01-wjhobhi8.hcp.westeurope.azmk8s.io`
+- API endpoint: `MC_rg-spoke-dev-network_aks-dev-we-01_westeurope`
+
 ## Terraform Structure
 
 ```text
@@ -431,19 +471,98 @@ terraform/
 
 ## Implemented vs Future State
 
-| Area | Implemented in Phase 1 | Future State |
+| Area | Current State | Future State |
 |---|---|---|
-| Hub network | Yes | Expand with centralized controls |
-| Dev spoke | Yes | Extend with AKS |
-| Prod spoke | No | Planned |
-| Jumpbox access | Yes | Future Bastion option |
-| Private service example | Yes | Expand to more services |
-| Private DNS for Key Vault | Yes | Extend to other services |
-| AKS | No | Planned |
-| CI/CD spoke | No | Planned |
-| Azure Firewall / NAT | No | Planned |
-| VPN / ExpressRoute | No | Planned |
-| Centralized monitoring/security | No | Planned |
+| Hub network | Implemented | Expand with centralized controls |
+| Dev spoke | Implemented | Extend further with workloads |
+| Dev AKS | Implemented (single cluster) | Harden and expand |
+| Prod spoke | Not implemented | Planned |
+| Prod AKS | Not implemented | Planned |
+| Jumpbox access | Implemented | Future Bastion option |
+| Private service example | Implemented | Expand to more services |
+| Private DNS for Key Vault | Implemented | Extend to other services |
+| CI/CD spoke | Not implemented | Planned |
+| Azure Firewall / NAT | Not implemented | Planned |
+| VPN / ExpressRoute | Not implemented | Planned |
+| Centralized monitoring/security | Not implemented | Planned |
+
+## Deployed Architecture with AKS
+
+![img](img/azure-private2.png)
+
+[comment]: <> (```mermaid)
+
+[comment]: <> (flowchart LR)
+
+[comment]: <> (    Internet&#40;&#40;Internet&#41;&#41;)
+
+[comment]: <> (    subgraph HUB["Hub VNet: vnet-hub-dev-we-01 &#40;10.0.0.0/16&#41;"])
+
+[comment]: <> (        JSubnet["snet-jumpbox"])
+
+[comment]: <> (        SSubnet["snet-shared-services"])
+
+[comment]: <> (        Jumpbox["vm-jumpbox-dev-we-01"])
+
+[comment]: <> (        JNSG["NSG: nsg-jumpbox-dev-we-01\nSSH only from trusted IP"])
+
+[comment]: <> (        JSubnet --> Jumpbox)
+
+[comment]: <> (        JNSG --- JSubnet)
+
+[comment]: <> (    end)
+
+[comment]: <> (    subgraph DEV["Dev Spoke VNet: vnet-spoke-dev-we-01 &#40;10.1.0.0/16&#41;"])
+
+[comment]: <> (        AKSSubnet["snet-dev-aks-system"])
+
+[comment]: <> (        AppSubnet["snet-dev-app"])
+
+[comment]: <> (        PESubnet["snet-dev-private-endpoints"])
+
+[comment]: <> (        AppNSG["NSG: nsg-dev-app-dev-we-01\nDeny direct internet SSH"])
+
+[comment]: <> (        AKS["aks-dev-we-01"])
+
+[comment]: <> (        PE["Private Endpoint:\npep-kv-shared-dev-we-01"])
+
+[comment]: <> (        AKSSubnet --> AKS)
+
+[comment]: <> (        AppNSG --- AppSubnet)
+
+[comment]: <> (        PESubnet --> PE)
+
+[comment]: <> (    end)
+
+[comment]: <> (    subgraph SHARED["Shared Services RG"])
+
+[comment]: <> (        KV["Key Vault"])
+
+[comment]: <> (        PDNS["Private DNS Zone:\nprivatelink.vaultcore.azure.net"])
+
+[comment]: <> (    end)
+
+[comment]: <> (    Internet -->|SSH from trusted IP only| Jumpbox)
+
+[comment]: <> (    Internet -.->|current AKS API access model| AKS)
+
+[comment]: <> (    HUB <-->|VNet Peering| DEV)
+
+[comment]: <> (    PE --> KV)
+
+[comment]: <> (    PDNS --- PE)
+
+[comment]: <> (    PDNS -. VNet Link .- HUB)
+
+[comment]: <> (    PDNS -. VNet Link .- DEV)
+
+[comment]: <> (    Jumpbox -. private DNS resolution .-> PDNS)
+
+[comment]: <> (    Jumpbox -. private service access path .-> KV)
+
+[comment]: <> (    AKS -. future private service consumption .-> KV)
+
+[comment]: <> (```)
 
 ## Lessons Learned
 
@@ -487,6 +606,33 @@ terraform/
 [comment]: <> (- private DNS zone and VNet links)
 
 [comment]: <> (- Terraform apply outputs)
+
+
+## Phase 2 Initial Expansion - AKS in the Dev Spoke
+
+The first Phase 2 extension adds one AKS cluster into the development spoke.
+
+### Implemented
+- one AKS cluster in `rg-spoke-dev-network`
+- one dedicated AKS node subnet: `snet-dev-aks-system`
+- user-assigned identity for AKS
+- subnet role assignment for cluster network operations
+
+### Purpose
+This extends the landing zone from a network and private-service proof of concept into a workload-platform proof of concept.
+
+### Current scope
+- one development AKS cluster only
+- public API endpoint retained for simplicity
+- no production AKS cluster yet
+- no private AKS API yet
+- no ingress/controller stack yet
+
+### Future direction
+- production AKS spoke
+- private AKS access model or API Server VNet integration
+- CI/CD integration
+- centralized platform controls
 
 
 ## Summary

@@ -109,14 +109,14 @@ Proposed dev subnets:
 - `10.1.1.0/24` - `snet-dev-system`
 - `10.1.2.0/24` - `snet-dev-app`
 - `10.1.3.0/24` - `snet-dev-private-endpoints`
-- `10.1.10.0/24` - `snet-dev-data` reserved
+- `10.1.10.0/24` - `snet-dev-aks-system`
+- `10.1.20.0/24` - `snet-dev-data` reserved
 
 ### Notes
-- `snet-dev-system` is reserved for future platform-managed components.
-- `snet-dev-app` is intended for application workloads.
-- `snet-dev-private-endpoints` is reserved for private connectivity to internal services.
-- `snet-dev-data` is reserved for future internal data services or delegated workloads.
-
+- `snet-dev-app` is reserved for future application-facing components and internal services that are not AKS nodes.
+- `snet-dev-private-endpoints` is reserved for private endpoints used by platform services.
+- `snet-dev-aks-system` is the dedicated AKS node subnet for the Phase 2 dev cluster.
+- The AKS subnet is intentionally separated from the app subnet for cleaner platform boundaries.
 ## Prod Spoke VNet Subnet Plan
 
 Prod Spoke VNet CIDR: `10.2.0.0/16`

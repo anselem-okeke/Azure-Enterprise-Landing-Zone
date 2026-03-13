@@ -208,6 +208,18 @@ The following controls are intentionally reserved for future enterprise phases:
 - full private endpoint platform rollout
 - enterprise SOC/monitoring stack
 
+## AKS Subnet Security Note
+
+The AKS node subnet is intentionally kept separate from the app subnet and private endpoint subnet.
+
+> For the current implementation, no custom NSG is attached to the AKS subnet.
+> This avoids prematurely constraining cluster networking before ingress, service exposure, and operational traffic patterns are fully defined.
+
+Future hardening may introduce:
+- reviewed NSG rules for AKS node traffic
+- ingress-specific subnet strategy
+- stronger egress control
+
 ## Summary
 
 > This security model gives the landing zone a controlled and realistic foundation.
