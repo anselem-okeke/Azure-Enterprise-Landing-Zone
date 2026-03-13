@@ -14,3 +14,10 @@ resource "azurerm_subnet" "this" {
   virtual_network_name = azurerm_virtual_network.this.name
   address_prefixes     = [each.value.address_prefix]
 }
+
+resource "azurerm_subnet_network_security_group_association" "this" {
+  for_each = var.subnet_nsg_associations
+
+  subnet_id                 = azurerm_subnet.this[each.key].id
+  network_security_group_id = each.value
+}

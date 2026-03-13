@@ -26,6 +26,12 @@ variable "subnets" {
   }))
 }
 
+variable "subnet_nsg_associations" {
+  description = "Map of subnet keys to NSG IDs"
+  type        = map(string)
+  default     = {}
+}
+
 variable "tags" {
   description = "Tags for resources"
   type        = map(string)

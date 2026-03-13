@@ -267,6 +267,228 @@ Potential additions in Phase 2:
 - full private endpoint strategy
 - centralized monitoring and security controls
 
+## Project Status
+
+### Target Architecture
+The target architecture includes:
+- hub shared services
+- dev and prod AKS spokes
+- private services
+- CI/CD spoke
+- hybrid/on-prem connectivity
+- centralized security and DNS services
+
+### Implemented in Phase 1
+The current proof of concept includes:
+- hub resource group
+- dev spoke resource group
+- shared services resource group
+- hub VNet
+- dev spoke VNet
+- VNet peering
+- secured jumpbox subnet
+- shared services subnet
+- dev app subnet
+- dev private-endpoints subnet
+- subnet NSGs
+- Linux jumpbox VM
+- Azure Key Vault
+- private endpoint for Key Vault
+- private DNS zone for Key Vault private link
+- VNet links for private DNS
+- hardened private Key Vault access path
+
+## Why This Architecture
+
+The design uses a hub-and-spoke model to separate shared platform services from workload environments.
+
+### Hub responsibilities
+- administrative entry point
+- shared services
+- future centralized controls
+
+### Dev spoke responsibilities
+- development workload boundary
+- private endpoint consumption
+- future AKS landing zone
+
+### Shared services responsibilities
+- internal platform services such as Key Vault
+- private-access design pattern
+- future shared service expansion
+
+## Deployed Phase 1 Architecture
+
+```mermaid
+flowchart LR
+    Internet((Internet))
+
+    subgraph HUB["Hub VNet: vnet-hub-dev-we-01 (10.0.0.0/16)"]
+        JSubnet["snet-jumpbox"]
+        SSubnet["snet-shared-services"]
+        Jumpbox["vm-jumpbox-dev-we-01"]
+        JNSG["NSG: nsg-jumpbox-dev-we-01\nSSH only from trusted IP"]
+        JSubnet --> Jumpbox
+        JNSG --- JSubnet
+    end
+
+    subgraph DEV["Dev Spoke VNet: vnet-spoke-dev-we-01 (10.1.0.0/16)"]
+        AppSubnet["snet-dev-app"]
+        PESubnet["snet-dev-private-endpoints"]
+        AppNSG["NSG: nsg-dev-app-dev-we-01\nDeny direct internet SSH"]
+        PE["Private Endpoint:\npep-kv-shared-dev-we-01"]
+        AppNSG --- AppSubnet
+        PESubnet --> PE
+    end
+
+    subgraph SHARED["Shared Services RG"]
+        KV["Key Vault"]
+        PDNS["Private DNS Zone:\nprivatelink.vaultcore.azure.net"]
+    end
+
+    Internet -->|SSH from trusted IP only| Jumpbox
+
+    HUB <-->|VNet Peering| DEV
+
+    PE --> KV
+    PDNS --- PE
+    PDNS -. VNet Link .- HUB
+    PDNS -. VNet Link .- DEV
+
+    Jumpbox -. private DNS resolution path .-> PDNS
+    Jumpbox -. private access path .-> KV
+```
+
+
+---
+
+
+```md
+## Deployed Resources
+
+### Resource Groups
+- `rg-hub-network-dev`
+- `rg-spoke-dev-network`
+- `rg-shared-services-dev`
+
+### Networking
+- `vnet-hub-dev-we-01`
+- `vnet-spoke-dev-we-01`
+- `peer-hub-to-dev-we-01`
+- `peer-dev-to-hub-we-01`
+
+### Subnets
+- `snet-jumpbox`
+- `snet-shared-services`
+- `snet-dev-app`
+- `snet-dev-private-endpoints`
+
+### Security
+- `nsg-jumpbox-dev-we-01`
+- `nsg-dev-app-dev-we-01`
+
+### Compute
+- `vm-jumpbox-dev-we-01`
+- `nic-jumpbox-dev-we-01`
+- `pip-jumpbox-dev-we-01`
+
+### Private Services
+- Azure Key Vault
+- private endpoint for Key Vault
+- private DNS zone: `privatelink.vaultcore.azure.net`
+```
+## Validation Performed
+
+The following checks were completed during the Phase 1 implementation:
+
+- resource groups created successfully
+- hub and dev spoke VNets created successfully
+- VNet peering connected and fully in sync
+- subnet-level NSGs applied successfully
+- jumpbox administrative access restricted to trusted public IP
+- Key Vault private endpoint created successfully
+- private DNS zone linked to both hub and dev spoke VNets
+- Key Vault name resolution validated from the jumpbox
+- Key Vault private access path validated
+- Key Vault public network access disabled after validation
+
+## Terraform Structure
+
+```text
+terraform/
+├── envs/
+│   └── dev/
+├── modules/
+│   ├── resource-group/
+│   ├── network/
+│   ├── vnet-peering/
+│   ├── nsg/
+│   ├── linux-vm/
+│   ├── private-service-example/
+│   └── private-dns/
+```
+---
+
+## Implemented vs Future State
+
+| Area | Implemented in Phase 1 | Future State |
+|---|---|---|
+| Hub network | Yes | Expand with centralized controls |
+| Dev spoke | Yes | Extend with AKS |
+| Prod spoke | No | Planned |
+| Jumpbox access | Yes | Future Bastion option |
+| Private service example | Yes | Expand to more services |
+| Private DNS for Key Vault | Yes | Extend to other services |
+| AKS | No | Planned |
+| CI/CD spoke | No | Planned |
+| Azure Firewall / NAT | No | Planned |
+| VPN / ExpressRoute | No | Planned |
+| Centralized monitoring/security | No | Planned |
+
+## Lessons Learned
+
+- provider configuration must exist in the active Terraform root module
+- subnet-to-NSG associations should use static keys in Terraform
+- private endpoints require DNS integration to behave as expected
+- private DNS linking is essential when clients live in different VNets
+- phased implementation is more realistic than attempting full enterprise parity at once
+
+## Next Steps
+
+### Phase 1 complete
+- networking foundation
+- secured admin path
+- private service pattern
+- private DNS validation
+- hardened Key Vault access
+
+### Phase 2 initial expansion
+- deploy one AKS cluster in the dev spoke
+- integrate AKS with the spoke design
+- add lightweight CI/CD validation workflow
+- continue aligning deployed resources with the target architecture
+
+## Evidence and Screenshots
+
+[comment]: <> (Recommended screenshots to include:)
+
+[comment]: <> (- Azure resource groups)
+
+[comment]: <> (- deployed VNets)
+
+[comment]: <> (- VNet peering status)
+
+[comment]: <> (- NSGs and subnet associations)
+
+[comment]: <> (- jumpbox VM)
+
+[comment]: <> (- Key Vault private endpoint)
+
+[comment]: <> (- private DNS zone and VNet links)
+
+[comment]: <> (- Terraform apply outputs)
+
+
 ## Summary
 
 This landing zone is designed as a phased Azure platform foundation.
