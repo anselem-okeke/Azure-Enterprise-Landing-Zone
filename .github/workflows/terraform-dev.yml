@@ -145,6 +145,10 @@
 #       - name: Show Azure account
 #         run: az account show -o table
 
+permissions:
+  contents: read
+  id-token: write
+#   pull-requests: write
 
 name: Terraform Dev
 
@@ -156,11 +160,6 @@ on:
       - dev
   pull_request:
   workflow_dispatch:
-
-permissions:
-  contents: read
-  id-token: write
-  pull-requests: write
 
 env:
   TF_ROOT: terraform
