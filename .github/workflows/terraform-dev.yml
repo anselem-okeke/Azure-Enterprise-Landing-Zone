@@ -104,6 +104,9 @@
 #           kubectl get nodes
 #           kubectl get pods -A
 
+permissions:
+  id-token: write # This is the missing piece for OIDC
+  contents: read  # This is required for the checkout action
 
 name: Self Hosted Runner Test
 
