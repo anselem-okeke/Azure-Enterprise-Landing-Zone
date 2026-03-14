@@ -104,9 +104,16 @@
 #           kubectl get nodes
 #           kubectl get pods -A
 
+          
 name: Self Hosted Runner Test
 
 on:
+  push:
+    branches:
+      - main
+      - master
+      - dev
+  pull_request:
   workflow_dispatch:
 
 jobs:
