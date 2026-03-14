@@ -6,4 +6,4 @@ terraform.tfvars
 crash.log
 crash.*.log
 Store-the-SP-details-in-Key-Vault.sh
-azure-rbac.sh
+azure-rbac.shkubectl
