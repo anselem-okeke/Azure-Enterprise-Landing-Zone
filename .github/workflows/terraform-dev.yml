@@ -104,11 +104,49 @@
 #           kubectl get nodes
 #           kubectl get pods -A
 
-permissions:
-  id-token: write # This is the missing piece for OIDC
-  contents: read  # This is required for the checkout action
+# permissions:
+#   id-token: write # This is the missing piece for OIDC
+#   contents: read  # This is required for the checkout action
+#
+# name: Self Hosted Runner Test
+#
+# on:
+#   push:
+#     branches:
+#       - main
+#       - master
+#       - dev
+#   pull_request:
+#   workflow_dispatch:
+#
+# jobs:
+#   test-runner:
+#     runs-on: [self-hosted, Linux, X64]
+#
+#     steps:
+#       - name: Show hostname
+#         run: hostname
+#
+#       - name: Show current user
+#         run: whoami
+#
+#       - name: Show runner network identity
+#         run: |
+#           ip addr
+#           ip route
+#
+#       - name: Azure Login with OIDC
+#         uses: azure/login@v2
+#         with:
+#           client-id: ${{ secrets.AZURE_CLIENT_ID }}
+#           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+#           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+#
+#       - name: Show Azure account
+#         run: az account show -o table
 
-name: Self Hosted Runner Test
+
+name: Terraform Dev
 
 on:
   push:
@@ -119,21 +157,93 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+  id-token: write
+  pull-requests: write
+
+env:
+  TF_ROOT: terraform
+  TF_ENV_DIR: terraform/envs/dev
+
 jobs:
-  test-runner:
-    runs-on: [self-hosted, Linux, X64]
+  terraform-checks:
+    name: Terraform Checks
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Show hostname
-        run: hostname
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Show current user
-        run: whoami
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
 
-      - name: Show runner network identity
+      - name: Terraform Format Check
+        working-directory: ${{ env.TF_ROOT }}
+        run: terraform fmt -check -recursive
+
+      - name: Terraform Init (no backend)
+        working-directory: ${{ env.TF_ENV_DIR }}
+        run: terraform init -backend=false -input=false
+
+      - name: Terraform Validate
+        working-directory: ${{ env.TF_ENV_DIR }}
+        run: terraform validate
+
+  terraform-plan:
+    name: Terraform Plan
+    runs-on: ubuntu-latest
+    needs: terraform-checks
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Azure Login with OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Terraform Init
+        working-directory: ${{ env.TF_ENV_DIR }}
+        run: terraform init -input=false
+
+      - name: Terraform Plan
+        working-directory: ${{ env.TF_ENV_DIR }}
         run: |
-          ip addr
-          ip route
+          terraform plan -input=false -no-color -out=tfplan | tee plan.txt
+
+      - name: Upload human-readable plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-plan-dev-text
+          path: ${{ env.TF_ENV_DIR }}/plan.txt
+
+      - name: Upload binary plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-plan-dev-binary
+          path: ${{ env.TF_ENV_DIR }}/tfplan
+
+  aks-smoke:
+    name: AKS Smoke Check
+    runs-on: [self-hosted, Linux, X64]
+    needs: terraform-plan
+    if: github.event_name == 'workflow_dispatch'
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Azure Login with OIDC
         uses: azure/login@v2
@@ -145,127 +255,17 @@ jobs:
       - name: Show Azure account
         run: az account show -o table
 
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v4
 
-# name: Terraform Dev
-#
-# on:
-#   push:
-#     branches:
-#       - main
-#       - master
-#       - dev
-#   pull_request:
-#   workflow_dispatch:
-#
-# permissions:
-#   contents: read
-#   id-token: write
-#   pull-requests: write
-#
-# env:
-#   TF_ROOT: terraform
-#   TF_ENV_DIR: terraform/envs/dev
-#
-# jobs:
-#   terraform-checks:
-#     name: Terraform Checks
-#     runs-on: ubuntu-latest
-#
-#     steps:
-#       - name: Checkout repository
-#         uses: actions/checkout@v4
-#
-#       - name: Setup Terraform
-#         uses: hashicorp/setup-terraform@v3
-#
-#       - name: Terraform Format Check
-#         working-directory: ${{ env.TF_ROOT }}
-#         run: terraform fmt -check -recursive
-#
-#       - name: Terraform Init (no backend)
-#         working-directory: ${{ env.TF_ENV_DIR }}
-#         run: terraform init -backend=false -input=false
-#
-#       - name: Terraform Validate
-#         working-directory: ${{ env.TF_ENV_DIR }}
-#         run: terraform validate
-#
-#   terraform-plan:
-#     name: Terraform Plan
-#     runs-on: ubuntu-latest
-#     needs: terraform-checks
-#     if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
-#
-#     steps:
-#       - name: Checkout repository
-#         uses: actions/checkout@v4
-#
-#       - name: Setup Terraform
-#         uses: hashicorp/setup-terraform@v3
-#
-#       - name: Azure Login with OIDC
-#         uses: azure/login@v2
-#         with:
-#           client-id: ${{ secrets.AZURE_CLIENT_ID }}
-#           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-#           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-#
-#       - name: Terraform Init
-#         working-directory: ${{ env.TF_ENV_DIR }}
-#         run: terraform init -input=false
-#
-#       - name: Terraform Plan
-#         working-directory: ${{ env.TF_ENV_DIR }}
-#         run: |
-#           terraform plan -input=false -no-color -out=tfplan | tee plan.txt
-#
-#       - name: Upload human-readable plan
-#         uses: actions/upload-artifact@v4
-#         with:
-#           name: terraform-plan-dev-text
-#           path: ${{ env.TF_ENV_DIR }}/plan.txt
-#
-#       - name: Upload binary plan
-#         uses: actions/upload-artifact@v4
-#         with:
-#           name: terraform-plan-dev-binary
-#           path: ${{ env.TF_ENV_DIR }}/tfplan
-#
-#   aks-smoke:
-#     name: AKS Smoke Check
-#     runs-on: [self-hosted, Linux, X64]
-#     needs: terraform-plan
-#     if: github.event_name == 'workflow_dispatch'
-#
-#     permissions:
-#       contents: read
-#       id-token: write
-#
-#     steps:
-#       - name: Checkout repository
-#         uses: actions/checkout@v4
-#
-#       - name: Azure Login with OIDC
-#         uses: azure/login@v2
-#         with:
-#           client-id: ${{ secrets.AZURE_CLIENT_ID }}
-#           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-#           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-#
-#       - name: Show Azure account
-#         run: az account show -o table
-#
-#       - name: Install kubectl
-#         uses: azure/setup-kubectl@v4
-#
-#       - name: Get AKS credentials
-#         run: |
-#           az aks get-credentials \
-#             --resource-group rg-spoke-dev-network \
-#             --name aks-dev-we-01 \
-#             --overwrite-existing
-#
-#       - name: AKS smoke checks
-#         run: |
-#           kubectl get nodes
-#           kubectl get pods -A
+      - name: Get AKS credentials
+        run: |
+          az aks get-credentials \
+            --resource-group rg-spoke-dev-network \
+            --name aks-dev-we-01 \
+            --overwrite-existing
+
+      - name: AKS smoke checks
+        run: |
+          kubectl get nodes
+          kubectl get pods -A
