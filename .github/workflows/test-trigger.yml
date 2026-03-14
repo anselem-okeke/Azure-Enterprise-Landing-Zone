@@ -1,14 +1,40 @@
-name: Test Trigger
+permissions:
+  id-token: write # This is the missing piece for OIDC
+  contents: read  # This is required for the checkout action
+
+name: Self Hosted Runner Test
 
 on:
   push:
     branches:
       - main
+      - master
+      - dev
+  pull_request:
   workflow_dispatch:
 
 jobs:
-  hello:
-    runs-on: ubuntu-latest
+  test-runner:
+    runs-on: [self-hosted, Linux, X64]
+
     steps:
-      - name: Test
-        run: echo "GitHub Actions is working"
+      - name: Show hostname
+        run: hostname
+
+      - name: Show current user
+        run: whoami
+
+      - name: Show runner network identity
+        run: |
+          ip addr
+          ip route
+
+      - name: Azure Login with OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Show Azure account
+        run: az account show -o table
