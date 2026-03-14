@@ -447,10 +447,28 @@ The AKS integration was validated using:
 - This confirms that the landing zone now includes a functioning Kubernetes platform component in the development spoke.
 
 ### AKS Deployment Outputs
+```shell
+terraform output aks_dev_name
+terraform output aks_dev_fqdn
+terraform output aks_dev_node_resource_group
+```
 
 - cluster name: `aks-dev-we-01`
 - node resource group: `aksdevwe01-wjhobhi8.hcp.westeurope.azmk8s.io`
 - API endpoint: `MC_rg-spoke-dev-network_aks-dev-we-01_westeurope`
+
+## Key Vault Secret Usage
+
+The Key Vault is now used for more than private endpoint validation.
+
+### Stored secrets
+- runtime service principal client ID
+- runtime service principal tenant ID
+- runtime service principal client secret
+- database connection placeholders
+
+### Intended next use
+The AKS cluster can later consume these secrets through Azure Key Vault integration, for example with the Secrets Store CSI Driver and identity-based access.
 
 ## Terraform Structure
 
@@ -633,6 +651,32 @@ This extends the landing zone from a network and private-service proof of concep
 - private AKS access model or API Server VNet integration
 - CI/CD integration
 - centralized platform controls
+
+### CI / CD Workflow
+```md
+Developer pushes code
+        │
+        ▼
+GitHub Actions Runner
+        │
+        │ OIDC token request
+        ▼
+GitHub OIDC Provider
+        │
+        ▼
+Microsoft Entra ID
+        │
+   Federated Credential
+        │
+        ▼
+Service Principal Identity
+        │
+        ▼
+Azure RBAC
+        │
+        ▼
+Terraform deploys infrastructure
+```
 
 
 ## Summary
