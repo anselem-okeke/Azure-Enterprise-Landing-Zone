@@ -9,6 +9,7 @@ Achievements for the day:
 - reusable module folders 
 - placeholders for variables, outputs, and docs 
 - a structure that looks like a real platform repo
+- this is to add
 
 ### Create the Terraform folder structure
 
