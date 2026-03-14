@@ -653,6 +653,8 @@ This extends the landing zone from a network and private-service proof of concep
 - centralized platform controls
 
 ### CI / CD Workflow
+![img](img/github-oidc-azure.png)
+
 ```md
 Developer pushes code
         │
