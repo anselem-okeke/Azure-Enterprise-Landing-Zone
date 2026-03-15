@@ -21,10 +21,6 @@ on:
 
   workflow_dispatch:
     inputs:
-      trusted_admin_ip:
-        description: "Your current public IP in CIDR format, e.g. 1.2.3.4/32"
-        required: true
-        type: string
       run_aks_smoke:
         description: "Run AKS smoke checks after Terraform plan"
         required: true
@@ -71,6 +67,8 @@ jobs:
 
       - name: Terraform validate
         working-directory: ${{ env.TF_ENV_DIR }}
+        env:
+          TF_VAR_ssh_public_key: ${{ secrets.TF_VAR_ssh_public_key }}
         run: terraform validate
 
   plan:
@@ -84,8 +82,6 @@ jobs:
       ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
       ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
       ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-      TF_VAR_trusted_admin_ip: ${{ inputs.trusted_admin_ip }}
       TF_VAR_ssh_public_key: ${{ secrets.TF_VAR_ssh_public_key }}
 
     steps:

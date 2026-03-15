@@ -41,8 +41,9 @@ variable "phase" {
 }
 
 variable "trusted_admin_ip" {
-  description = "Trusted public IP allowed to SSH to the jumpbox subnet"
+  description = "Initial trusted admin IP for SSH access"
   type        = string
+  default     = "127.0.0.1/32"
 }
 
 variable "admin_username" {
