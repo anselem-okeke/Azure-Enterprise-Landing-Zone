@@ -91,3 +91,7 @@ variable "admin_public_ip" {
   type        = string
   default     = null
 }
+
+variable "aks_egress_public_ip" {
+  type = string
+}

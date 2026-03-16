@@ -251,6 +251,11 @@ module "postgres_dev" {
         name             = "allow-jumpbox-ip"
         start_ip_address = var.jumpbox_public_ip
         end_ip_address   = var.jumpbox_public_ip
+      },
+      {
+        name             = "allow-aks-egress"
+        start_ip_address = var.aks_egress_public_ip
+        end_ip_address   = var.aks_egress_public_ip
       }
     ],
     var.admin_public_ip != null ? [
