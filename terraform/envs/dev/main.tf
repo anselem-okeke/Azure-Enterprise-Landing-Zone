@@ -103,7 +103,7 @@ module "network_spoke_dev" {
       #        }
       #      }
     }
-  }  
+  }
 
   subnet_nsg_associations = {
     dev_app = module.nsg_dev_app.id
