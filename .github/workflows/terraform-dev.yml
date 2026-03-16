@@ -114,7 +114,19 @@ jobs:
 
       - name: Terraform plan
         working-directory: ${{ env.TF_ENV_DIR }}
-        run: terraform plan -input=false -no-color -out=tfplan | tee plan.txt
+        run: terraform plan -input=false -no-color -out=tfplan
+
+      - name: Render human-readable plan
+        working-directory: ${{ env.TF_ENV_DIR }}
+        run: terraform show -no-color tfplan > plan.txt
+
+      - name: Verify plan artifacts
+        working-directory: ${{ env.TF_ENV_DIR }}
+        run: |
+          pwd
+          ls -lah
+          test -f tfplan
+          test -f plan.txt
 
       - name: Upload human-readable plan
         if: always()
