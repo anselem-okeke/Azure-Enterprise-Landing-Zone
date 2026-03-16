@@ -83,6 +83,9 @@ jobs:
       ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
       ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       TF_VAR_ssh_public_key: ${{ secrets.TF_VAR_ssh_public_key }}
+      TF_VAR_postgres_admin_password: ${{ secrets.TF_VAR_postgres_admin_password }}
+      TF_VAR_jumpbox_public_ip: ${{ vars.TF_VAR_jumpbox_public_ip }}
+      TF_VAR_aks_egress_public_ip: ${{ vars.TF_VAR_aks_egress_public_ip }}
 
     steps:
       - name: Checkout repository
