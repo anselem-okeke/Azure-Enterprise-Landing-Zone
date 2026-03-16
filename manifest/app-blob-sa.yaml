@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: app-demo-blob-sa
+  namespace: app-demo
+  annotations:
+    azure.workload.identity/client-id: "f9f066d1-ebfd-4dd7-8a32-851c24e879de"

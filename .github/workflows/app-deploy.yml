@@ -1,0 +1,77 @@
+name: App Deploy - AKS
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - dev
+    paths:
+      - "k8s/**"
+      - ".github/workflows/app-deploy.yml"
+
+  workflow_dispatch:
+    inputs:
+      run_post_deploy_checks:
+        description: "Run pod and deployment checks after apply"
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: app-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy app manifests to AKS
+    runs-on: [self-hosted, Linux, X64]
+
+    env:
+      ARM_USE_OIDC: true
+      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Azure login with OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Get AKS credentials
+        run: |
+          az aks get-credentials \
+            --resource-group rg-spoke-dev-network \
+            --name aks-dev-we-01 \
+            --overwrite-existing
+
+      - name: Apply manifests
+        run: |
+          kubectl apply -f manifest/namespace.yaml
+          kubectl apply -f manifest/app-sa.yaml
+          kubectl apply -f manifest/spc-app-demo.yaml
+          kubectl apply -f manifest/app-demo-configmap.yaml
+          kubectl apply -f manifest/app-demo-deployment.yaml
+          kubectl apply -f manifest/app-blob-sa.yaml
+          kubectl apply -f manifest/app-blob-configmap.yaml
+          kubectl apply -f manifest/app-blob-deployment.yaml
+
+      - name: Post-deploy checks
+        if: github.event_name == 'push' || inputs.run_post_deploy_checks == true
+        run: |
+          kubectl get ns
+          kubectl get deployments -n app-demo
+          kubectl get pods -n app-demo

@@ -1,0 +1,50 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-demo-code
+  namespace: app-demo
+data:
+  app.py: |
+    import os
+    import time
+    import psycopg
+
+    def read_secret(name):
+        path = f"/mnt/secrets-store/{name}"
+        with open(path, "r") as f:
+            return f.read().strip()
+
+    while True:
+        try:
+            host = read_secret("db-host")
+            dbname = read_secret("db-name")
+            user = read_secret("db-username")
+            password = read_secret("db-password")
+            port = read_secret("db-port")
+
+            print("Loaded secrets successfully")
+            print(f"Connecting to host={host} db={dbname} user={user} port={port}")
+
+            conn = psycopg.connect(
+                host=host,
+                dbname=dbname,
+                user=user,
+                password=password,
+                port=port,
+                sslmode="require",
+                connect_timeout=10
+            )
+
+            cur = conn.cursor()
+            cur.execute("SELECT version();")
+            version = cur.fetchone()
+            print("PostgreSQL connection successful")
+            print(f"Server version: {version[0]}")
+
+            cur.close()
+            conn.close()
+
+        except Exception as e:
+            print(f"Connection failed: {e}")
+
+        time.sleep(60)

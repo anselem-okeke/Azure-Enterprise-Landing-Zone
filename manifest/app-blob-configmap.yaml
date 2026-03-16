@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-blob-code
+  namespace: app-demo
+data:
+  app.py: |
+    import os
+    from azure.identity import WorkloadIdentityCredential
+    from azure.storage.blob import BlobServiceClient
+
+    account_name = "stappdemodevneu01"
+    container_name = "app-data"
+    blob_name = "hello.txt"
+
+    credential = WorkloadIdentityCredential()
+    account_url = f"https://{account_name}.blob.core.windows.net"
+
+    print("Creating BlobServiceClient...")
+    client = BlobServiceClient(account_url=account_url, credential=credential)
+    container = client.get_container_client(container_name)
+
+    print("Uploading blob...")
+    container.upload_blob(blob_name, b"hello from aks workload identity", overwrite=True)
+
+    print("Downloading blob...")
+    data = container.download_blob(blob_name).readall()
+
+    print("BLOB CONTENT:")
+    print(data.decode())
