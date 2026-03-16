@@ -90,6 +90,19 @@ module "network_spoke_dev" {
       name           = "snet-dev-aks-system"
       address_prefix = "10.1.10.0/24"
     }
+    db = {
+      name           = "snet-dev-db"
+      address_prefix = "10.1.30.0/24"
+      #      delegation = {
+      #        name = "pgsql-flexible-server-delegation"
+      #        service_delegation = {
+      #          name = "Microsoft.DBforPostgreSQL/flexibleServers"
+      #          actions = [
+      #            "Microsoft.Network/virtualNetworks/subnets/join/action"
+      #          ]
+      #        }
+      #      }
+    }
   }
 
   subnet_nsg_associations = {
@@ -220,3 +233,66 @@ module "aks_dev" {
     azurerm_role_assignment.aks_dev_subnet_network_contributor
   ]
 }
+
+module "postgres_dev" {
+  source                 = "../../modules/postgresql-flexible"
+  name                   = "pgflexdevneu01"
+  location               = "northeurope"
+  resource_group_name    = module.rg_shared_services.name
+  administrator_login    = var.postgres_admin_username
+  administrator_password = var.postgres_admin_password
+  sku_name               = "B_Standard_B1ms"
+  public_access          = true
+  tags                   = local.tags
+
+  firewall_rules = concat(
+    [
+      {
+        name             = "allow-jumpbox-ip"
+        start_ip_address = var.jumpbox_public_ip
+        end_ip_address   = var.jumpbox_public_ip
+      }
+    ],
+    var.admin_public_ip != null ? [
+      {
+        name             = "allow-admin-ip"
+        start_ip_address = var.admin_public_ip
+        end_ip_address   = var.admin_public_ip
+      }
+    ] : []
+  )
+}
+
+#module "private_dns_postgres" {
+#  source              = "../../modules/private-dns"
+#  zone_name           = "dev.postgres.database.azure.com"
+#  resource_group_name = module.rg_shared_services.name
+#  tags                = local.tags
+#
+#  virtual_network_links = {
+#    hub = {
+#      name               = "pdnslink-postgres-hub-dev-we-01"
+#      virtual_network_id = module.network_hub.vnet_id
+#    }
+#    dev = {
+#      name               = "pdnslink-postgres-spoke-dev-we-01"
+#      virtual_network_id = module.network_spoke_dev.vnet_id
+#    }
+#  }
+#}
+
+#module "postgres_dev" {
+#  source                 = "../../modules/postgresql-flexible"
+#  name                   = "pgflexdevwe01"
+#  location               = var.location
+#  resource_group_name    = module.rg_shared_services.name
+#  administrator_login    = var.postgres_admin_username
+#  administrator_password = var.postgres_admin_password
+#  delegated_subnet_id    = module.network_spoke_dev.subnet_ids["db"]
+#  private_dns_zone_id    = module.private_dns_postgres.zone_id
+#  tags                   = local.tags
+#
+#  depends_on = [
+#    module.private_dns_postgres
+#  ]
+#}

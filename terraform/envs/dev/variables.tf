@@ -68,3 +68,26 @@ variable "aks_node_count" {
   type        = number
   default     = 1
 }
+
+variable "postgres_admin_username" {
+  description = "PostgreSQL admin username"
+  type        = string
+  default     = "pgadminuser"
+}
+
+variable "postgres_admin_password" {
+  description = "PostgreSQL admin password"
+  type        = string
+  sensitive   = true
+}
+
+variable "jumpbox_public_ip" {
+  description = "Public IP allowed to access PostgreSQL"
+  type        = string
+}
+
+variable "admin_public_ip" {
+  description = "Host machine public IP allowed to access PostgreSQL"
+  type        = string
+  default     = null
+}

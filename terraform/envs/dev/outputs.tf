@@ -53,3 +53,11 @@ output "aks_dev_fqdn" {
 output "aks_dev_node_resource_group" {
   value = module.aks_dev.node_resource_group
 }
+
+output "postgres_name" {
+  value = module.postgres_dev.name
+}
+
+output "postgres_fqdn" {
+  value = module.postgres_dev.fqdn
+}

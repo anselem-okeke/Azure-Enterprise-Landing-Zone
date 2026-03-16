@@ -23,8 +23,23 @@ variable "subnets" {
   type = map(object({
     name           = string
     address_prefix = string
+    delegation = optional(object({
+      name = string
+      service_delegation = object({
+        name    = string
+        actions = list(string)
+      })
+    }))
   }))
 }
+
+#variable "subnets" {
+#  description = "Map of subnets"
+#  type = map(object({
+#    name           = string
+#    address_prefix = string
+#  }))
+#}
 
 variable "subnet_nsg_associations" {
   description = "Map of subnet keys to NSG IDs"
