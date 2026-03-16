@@ -78,57 +78,69 @@ jobs:
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request'
 
     env:
-      ARM_USE_OIDC: true
-      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      TF_VAR_ssh_public_key: ${{ secrets.TF_VAR_ssh_public_key }}
+    ARM_USE_OIDC: true
+    ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+    ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+    ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+    TF_VAR_ssh_public_key: ${{ secrets.TF_VAR_ssh_public_key }}
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-      - name: Verify runner prerequisites
-        run: |
-          node --version
-          unzip -v | head -n 1
-          curl --version | head -n 1
-          az version | head -n 20
+    - name: Verify runner prerequisites
+      run: |
+        node --version
+        unzip -v | head -n 1
+        curl --version | head -n 1
+        az version | head -n 20
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: ${{ env.TF_VERSION }}
-          terraform_wrapper: false
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: ${{ env.TF_VERSION }}
+        terraform_wrapper: false
 
-      - name: Azure login with OIDC
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+    - name: Azure login with OIDC
+      uses: azure/login@v2
+      with:
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Terraform init
-        working-directory: ${{ env.TF_ENV_DIR }}
-        run: terraform init -input=false
+    - name: Terraform init
+      working-directory: ${{ env.TF_ENV_DIR }}
+      run: terraform init -input=false
 
-      - name: Terraform plan
-        working-directory: ${{ env.TF_ENV_DIR }}
-        run: terraform plan -input=false -no-color -out=tfplan | tee plan.txt
+    - name: Terraform plan
+      working-directory: ${{ env.TF_ENV_DIR }}
+      run: terraform plan -input=false -no-color -out=tfplan
 
-      - name: Upload human-readable plan
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: terraform-plan-dev-text
-          path: ${{ env.TF_ENV_DIR }}/plan.txt
+    - name: Render human-readable plan
+      working-directory: ${{ env.TF_ENV_DIR }}
+      run: terraform show -no-color tfplan > plan.txt
 
-      - name: Upload binary plan
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: terraform-plan-dev-binary
-          path: ${{ env.TF_ENV_DIR }}/tfplan
+    - name: Verify plan artifacts
+      working-directory: ${{ env.TF_ENV_DIR }}
+      run: |
+        pwd
+        ls -lah
+        test -f tfplan
+        test -f plan.txt
+
+    - name: Upload human-readable plan
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: terraform-plan-dev-text
+        path: ${{ env.TF_ENV_DIR }}/plan.txt
+
+    - name: Upload binary plan
+      if: success()
+      uses: actions/upload-artifact@v4
+      with:
+        name: terraform-plan-dev-binary
+        path: ${{ env.TF_ENV_DIR }}/tfplan
 
   aks-smoke:
     name: AKS Smoke - dev

@@ -605,13 +605,16 @@ terraform/
 - add lightweight CI/CD validation workflow
 - continue aligning deployed resources with the target architecture
 
-## Evidence and Screenshots
+## Screenshots
 
-[comment]: <> (Recommended screenshots to include:)
+- ### Azure resource groups
+![img](img/rg.png)
 
-[comment]: <> (- Azure resource groups)
-
-[comment]: <> (- deployed VNets)
+---
+- ### Deployed VNets
+![img](img/vn1.png)
+![img](img/vn2.png)
+---
 
 [comment]: <> (- VNet peering status)
 

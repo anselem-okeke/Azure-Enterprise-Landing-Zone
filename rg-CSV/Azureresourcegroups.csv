@@ -1,0 +1,8 @@
+﻿NAME,SUBSCRIPTION,LOCATION,RESOURCE LINK
+"anselem-rg","Azure subscription 1","North Europe","https://portal.azure.com#resource/subscriptions/fcf48efa-3888-4412-930c-99d8a7f9067c/resourceGroups/anselem-rg"
+"MC_rg-spoke-dev-network_aks-dev-we-01_westeurope","Azure subscription 1","West Europe","https://portal.azure.com#resource/subscriptions/fcf48efa-3888-4412-930c-99d8a7f9067c/resourceGroups/MC_rg-spoke-dev-network_aks-dev-we-01_westeurope"
+"NetworkWatcherRG","Azure subscription 1","North Europe","https://portal.azure.com#resource/subscriptions/fcf48efa-3888-4412-930c-99d8a7f9067c/resourceGroups/NetworkWatcherRG"
+"rg-hub-network-dev","Azure subscription 1","West Europe","https://portal.azure.com#resource/subscriptions/fcf48efa-3888-4412-930c-99d8a7f9067c/resourceGroups/rg-hub-network-dev"
+"rg-shared-services-dev","Azure subscription 1","West Europe","https://portal.azure.com#resource/subscriptions/fcf48efa-3888-4412-930c-99d8a7f9067c/resourceGroups/rg-shared-services-dev"
+"rg-spoke-dev-network","Azure subscription 1","West Europe","https://portal.azure.com#resource/subscriptions/fcf48efa-3888-4412-930c-99d8a7f9067c/resourceGroups/rg-spoke-dev-network"
+"rg-tfstate-dev","Azure subscription 1","West Europe","https://portal.azure.com#resource/subscriptions/fcf48efa-3888-4412-930c-99d8a7f9067c/resourceGroups/rg-tfstate-dev"
