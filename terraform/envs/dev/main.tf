@@ -105,6 +105,8 @@ module "network_spoke_dev" {
     }
   }
 
+  # test PR comment trigger  
+
   subnet_nsg_associations = {
     dev_app = module.nsg_dev_app.id
   }
