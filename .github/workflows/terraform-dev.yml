@@ -207,13 +207,15 @@ jobs:
                 comment_id: existing.id,
                 body: finalBody,
               });
+              core.info(`Updated existing PR comment: ${existing.id}`);
             } else {
-              await github.rest.issues.createComment({
+              const created = await github.rest.issues.createComment({
                 owner,
                 repo,
                 issue_number,
                 body: finalBody,
               });
+              core.info(`Created new PR comment: ${created.data.id}`);
             }
 
   aks-smoke:
