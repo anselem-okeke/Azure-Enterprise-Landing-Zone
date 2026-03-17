@@ -82,10 +82,10 @@ jobs:
       ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
       ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
       ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      TF_VAR_ssh_public_key: ${{ secrets.TF_VAR_ssh_public_key }}
-      TF_VAR_postgres_admin_password: ${{ secrets.TF_VAR_postgres_admin_password }}
-      TF_VAR_jumpbox_public_ip: ${{ vars.TF_VAR_jumpbox_public_ip }}
-      TF_VAR_aks_egress_public_ip: ${{ vars.TF_VAR_aks_egress_public_ip }}
+      TF_VAR_ssh_public_key: ${{ secrets.TF_VAR_SSH_PUBLIC_KEY }}
+      TF_VAR_postgres_admin_password: ${{ secrets.TF_VAR_POSTGRES_ADMIN_PASSWORD }}
+      TF_VAR_jumpbox_public_ip: ${{ vars.TF_VAR_JUMPBOX_PUBLIC_IP }}
+      TF_VAR_aks_egress_public_ip: ${{ vars.TF_VAR_AKS_EGRESS_PUBLIC_IP }}
 
     steps:
       - name: Checkout repository
@@ -131,6 +131,29 @@ jobs:
           test -f tfplan
           test -f plan.txt
 
+      - name: Build PR plan summary
+        if: github.event_name == 'pull_request'
+        working-directory: ${{ env.TF_ENV_DIR }}
+        run: |
+          PLAN_SUMMARY=$(grep -E '^Plan: [0-9]+ to add, [0-9]+ to change, [0-9]+ to destroy\.$' plan.txt | tail -n 1)
+
+          {
+            echo "## Terraform Plan - dev"
+            echo ""
+            echo "**Status:** Plan succeeded"
+            echo "**Workflow:** \`${{ github.workflow }}\`"
+            echo "**Run ID:** \`${{ github.run_id }}\`"
+            echo "**Commit:** \`${{ github.sha }}\`"
+            echo ""
+            echo "**Workflow run:** https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            echo ""
+            echo "**Summary:**"
+            echo ""
+            echo "\`${PLAN_SUMMARY:-Plan summary not found}\`"
+            echo ""
+            echo "_Full plan is available in the workflow artifacts._"
+          } > pr-comment.md
+
       - name: Upload human-readable plan
         if: always()
         uses: actions/upload-artifact@v4
@@ -144,6 +167,56 @@ jobs:
         with:
           name: terraform-plan-dev-binary
           path: ${{ env.TF_ENV_DIR }}/tfplan
+
+      - name: Upload PR comment draft
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-plan-pr-comment
+          path: ${{ env.TF_ENV_DIR }}/pr-comment.md
+
+      - name: Comment plan summary on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = '${{ env.TF_ENV_DIR }}/pr-comment.md';
+            const body = fs.readFileSync(path, 'utf8');
+
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.pull_request.number;
+
+            const marker = '<!-- terraform-dev-plan-comment -->';
+            const finalBody = `${marker}\n${body}`;
+
+            const comments = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number,
+            });
+
+            const existing = comments.data.find(c =>
+              c.user.type === 'Bot' && c.body.includes(marker)
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body: finalBody,
+              });
+              core.info(`Updated existing PR comment: ${existing.id}`);
+            } else {
+              const created = await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body: finalBody,
+              });
+              core.info(`Created new PR comment: ${created.data.id}`);
+            }
 
   aks-smoke:
     name: AKS Smoke - dev
