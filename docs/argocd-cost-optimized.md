@@ -15,8 +15,8 @@ This document explains the architecture shown in the diagram step by step, with 
 This document is intended to serve as:
 
 - a backup document for the architecture image
-- a knowledge base for CTOs, hiring managers, owners, recruiters, and engineering leaders
-- a technical talking point reference for interviews, architecture reviews, and platform planning
+- a knowledge base for CTOs, Managers, Company owners, and Engineering leaders
+- a technical talking point reference for Architecture reviews, and Platform Planning
 
 ---
 
