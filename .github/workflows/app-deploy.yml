@@ -7,7 +7,7 @@ on:
       - master
       - dev
     paths:
-      - "k8s/**"
+      - "manifest/**"
       - ".github/workflows/app-deploy.yml"
 
   workflow_dispatch:
@@ -48,6 +48,26 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      - name: Verify AKS exists and is ready
+        run: |
+          STATE=$(az aks show \
+            --resource-group rg-spoke-dev-network \
+            --name aks-dev-we-01 \
+            --query "provisioningState" \
+            -o tsv 2>/dev/null || true)
+
+          if [ -z "$STATE" ]; then
+            echo "AKS cluster aks-dev-we-01 was not found in rg-spoke-dev-network."
+            exit 1
+          fi
+
+          if [ "$STATE" != "Succeeded" ]; then
+            echo "AKS cluster exists but is not ready. Current provisioningState: $STATE"
+            exit 1
+          fi
+
+          echo "AKS cluster exists and is ready."
+
       - name: Install kubectl
         uses: azure/setup-kubectl@v4
 
@@ -69,9 +89,153 @@ jobs:
           kubectl apply -f manifest/app-blob-configmap.yaml
           kubectl apply -f manifest/app-blob-deployment.yaml
 
-      - name: Post-deploy checks
+      - name: Show basic cluster state
         if: github.event_name == 'push' || inputs.run_post_deploy_checks == true
         run: |
           kubectl get ns
           kubectl get deployments -n app-demo
-          kubectl get pods -n app-demo
+          kubectl get pods -n app-demo -o wide
+
+      - name: Wait for app-demo rollout
+        if: github.event_name == 'push' || inputs.run_post_deploy_checks == true
+        run: |
+          kubectl rollout status deployment/app-demo -n app-demo --timeout=180s
+
+      - name: Wait for app-blob-demo rollout
+        if: github.event_name == 'push' || inputs.run_post_deploy_checks == true
+        run: |
+          kubectl rollout status deployment/app-blob-demo -n app-demo --timeout=180s
+
+      - name: Show pod status after rollout
+        run: |
+          kubectl get deployments -n app-demo
+          kubectl get pods -n app-demo -o wide
+          kubectl describe deployment app-demo -n app-demo || true
+          kubectl describe deployment app-blob-demo -n app-demo || true
+
+      - name: App logs
+        run: |
+          kubectl logs -n app-demo deployment/app-demo --tail=100 || true
+
+      - name: Blob app logs
+        run: |
+          kubectl logs -n app-demo deployment/app-blob-demo --tail=100 || true
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# name: App Deploy - AKS
+#
+# on:
+#   push:
+#     branches:
+#       - main
+#       - master
+#       - dev
+#     paths:
+#       - "manifest/**"
+#       - ".github/workflows/app-deploy.yml"
+#
+#   workflow_dispatch:
+#     inputs:
+#       run_post_deploy_checks:
+#         description: "Run pod and deployment checks after apply"
+#         required: true
+#         default: true
+#         type: boolean
+#
+# permissions:
+#   contents: read
+#   id-token: write
+#
+# concurrency:
+#   group: app-deploy-${{ github.ref }}
+#   cancel-in-progress: true
+#
+# jobs:
+#   deploy:
+#     name: Deploy app manifests to AKS
+#     runs-on: [self-hosted, Linux, X64]
+#
+#     env:
+#       ARM_USE_OIDC: true
+#       ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+#       ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+#       ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+#
+#     steps:
+#       - name: Checkout repository
+#         uses: actions/checkout@v4
+#
+#       - name: Azure login with OIDC
+#         uses: azure/login@v2
+#         with:
+#           client-id: ${{ secrets.AZURE_CLIENT_ID }}
+#           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+#           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+#
+#       - name: Install kubectl
+#         uses: azure/setup-kubectl@v4
+#
+#       - name: Get AKS credentials
+#         run: |
+#           az aks get-credentials \
+#             --resource-group rg-spoke-dev-network \
+#             --name aks-dev-we-01 \
+#             --overwrite-existing
+#
+#       - name: Apply manifests
+#         run: |
+#           kubectl apply -f manifest/namespace.yaml
+#           kubectl apply -f manifest/app-sa.yaml
+#           kubectl apply -f manifest/spc-app-demo.yaml
+#           kubectl apply -f manifest/app-demo-configmap.yaml
+#           kubectl apply -f manifest/app-demo-deployment.yaml
+#           kubectl apply -f manifest/app-blob-sa.yaml
+#           kubectl apply -f manifest/app-blob-configmap.yaml
+#           kubectl apply -f manifest/app-blob-deployment.yaml
+#
+#       - name: Show basic cluster state
+#         if: github.event_name == 'push' || inputs.run_post_deploy_checks == true
+#         run: |
+#           kubectl get ns
+#           kubectl get deployments -n app-demo
+#           kubectl get pods -n app-demo -o wide
+#
+#       - name: Wait for app-demo rollout
+#         if: github.event_name == 'push' || inputs.run_post_deploy_checks == true
+#         run: |
+#           kubectl rollout status deployment/app-demo -n app-demo --timeout=180s
+#
+#       - name: Wait for app-blob-demo rollout
+#         if: github.event_name == 'push' || inputs.run_post_deploy_checks == true
+#         run: |
+#           kubectl rollout status deployment/app-blob-demo -n app-demo --timeout=180s
+#
+#       - name: Show pod status after rollout
+#         if: always()
+#         run: |
+#           kubectl get deployments -n app-demo
+#           kubectl get pods -n app-demo -o wide
+#           kubectl describe deployment app-demo -n app-demo || true
+#           kubectl describe deployment app-blob-demo -n app-demo || true
+#
+#       - name: App logs
+#         if: always()
+#         run: |
+#           kubectl logs -n app-demo deployment/app-demo --tail=100 || true
+#
+#       - name: Blob app logs
+#         if: always()
+#         run: |
+#           kubectl logs -n app-demo deployment/app-blob-demo --tail=100 || true
