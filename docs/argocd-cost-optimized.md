@@ -549,7 +549,7 @@ Karpenter reduces:
 - underutilized node spend
 - poor node-size matching
 - slow or inefficient scale-down patterns
-
+- [Read more about KEDA and Karpenter](https://github.com/anselem-okeke/Azure-Enterprise-Landing-Zone/blob/main/docs/keda-karpenter.md)
 ---
 
 # 6.4 Shared Stage Cluster
